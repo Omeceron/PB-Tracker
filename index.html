@@ -1,0 +1,1731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PB Tracker</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#3D8B46">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="PB Tracker">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ground: #EDF4EE;
+  --surface: #FFFFFF;
+  --surface-2: #F2F8F2;
+  --border: #C8DDC9;
+  --border-2: #DAE9DB;
+  --text: #0D1E0E;
+  --text-2: #4A6B4D;
+  --text-3: #8AAD8C;
+  --accent: #2E7D32;
+  --accent-faint: #E8F5E9;
+  --accent-dim: #1B5E20;
+  --strava: #FC5200;
+  --strava-faint: #FFF1EB;
+  --danger: #C0392B;
+  --danger-faint: #FEEFED;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow: 0 1px 4px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
+  --shadow-lg: 0 4px 24px rgba(0,0,0,.12);
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'DM Mono', ui-monospace, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #0A1509;
+    --surface: #111E12;
+    --surface-2: #172518;
+    --border: #223D24;
+    --border-2: #1C3120;
+    --text: #DFF0DF;
+    --text-2: #8BBD8E;
+    --text-3: #4D7550;
+    --accent: #52B856;
+    --accent-faint: #122714;
+    --accent-dim: #76C97A;
+    --strava: #FF6B35;
+    --strava-faint: #1E0B03;
+    --danger: #E05A4A;
+    --danger-faint: #200D0B;
+  }
+}
+
+:root[data-theme="dark"] {
+  --ground: #0A1509;
+  --surface: #111E12;
+  --surface-2: #172518;
+  --border: #223D24;
+  --border-2: #1C3120;
+  --text: #DFF0DF;
+  --text-2: #8BBD8E;
+  --text-3: #4D7550;
+  --accent: #52B856;
+  --accent-faint: #122714;
+  --accent-dim: #76C97A;
+  --strava: #FF6B35;
+  --strava-faint: #1E0B03;
+  --danger: #E05A4A;
+  --danger-faint: #200D0B;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--ground);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* ── Nav ── */
+.nav {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-brand {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 17px;
+  letter-spacing: .04em;
+  color: var(--accent);
+}
+
+.nav-brand .dot { color: var(--text-3); }
+
+.nav-links {
+  display: flex;
+  gap: 4px;
+}
+
+.nav-link {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-2);
+  background: none;
+  border: none;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color .15s, background .15s;
+  position: relative;
+}
+
+.nav-link:hover { background: var(--surface-2); color: var(--text); }
+.nav-link.active { background: transparent; color: var(--accent); }
+.nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: -9px;
+  left: 10px;
+  right: 10px;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 2px 2px 0 0;
+}
+
+/* ── Icon buttons in nav ── */
+.nav-icon-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-3);
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color .15s, background .15s, border-color .15s;
+  margin-left: 6px;
+}
+.nav-icon-btn:hover { background: var(--surface-2); color: var(--text); border-color: var(--border); }
+
+/* ── Strava nav button ── */
+.strava-nav-btn.connected {
+  color: var(--strava);
+  border-color: color-mix(in srgb, var(--strava) 35%, transparent);
+  background: var(--strava-faint);
+}
+
+/* ── Main layout ── */
+main {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 32px 20px;
+}
+
+.view { display: none; }
+.view.active { display: block; }
+
+/* ── Section header ── */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -.02em;
+  color: var(--text);
+}
+
+/* ── PB Grid ── */
+.pb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.pb-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: box-shadow .15s, transform .15s;
+}
+
+.pb-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+
+.pb-card-body {
+  padding: 20px 20px 14px;
+}
+
+.pb-dist-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 10px;
+}
+
+.pb-dist-meta {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-bottom: 12px;
+}
+
+.pb-time {
+  font-family: var(--font-mono);
+  font-size: 38px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1;
+  margin-bottom: 8px;
+  letter-spacing: -.02em;
+}
+
+.pb-date-set {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-bottom: 2px;
+}
+
+.pb-card-footer {
+  padding: 10px 20px;
+  background: var(--surface-2);
+  border-top: 1px solid var(--border-2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pb-run-count {
+  font-size: 12px;
+  color: var(--text-3);
+  flex: 1;
+}
+
+/* ── List items ── */
+.list-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.list-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: var(--shadow);
+  transition: box-shadow .15s;
+}
+
+.list-item:hover { box-shadow: var(--shadow-lg); }
+
+.list-item-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.list-item-name {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text);
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.list-item-sub {
+  font-size: 12px;
+  color: var(--text-3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.list-item-time {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--accent);
+  white-space: nowrap;
+  margin-right: 4px;
+}
+
+.list-item-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* ── Strava link ── */
+.strava-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--strava);
+  text-decoration: none;
+  background: var(--strava-faint);
+  border-radius: 4px;
+  padding: 2px 8px;
+  transition: opacity .15s;
+}
+
+.strava-link:hover { opacity: .8; }
+.strava-link svg { flex-shrink: 0; }
+
+/* ── Strava activity rows ── */
+.strava-act-row {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border-2);
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: background .12s;
+}
+.strava-act-row:last-child { border-bottom: none; }
+.strava-act-row:hover { background: var(--accent-faint); }
+.strava-act-name { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+.strava-act-meta { font-size: 11px; color: var(--text-3); font-family: var(--font-mono); }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  padding: 8px 16px;
+  transition: opacity .15s, background .15s, color .15s;
+  white-space: nowrap;
+}
+
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover:not(:disabled) { background: var(--accent-dim); }
+
+.btn-ghost {
+  background: var(--surface-2);
+  color: var(--text-2);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover:not(:disabled) { background: var(--border-2); color: var(--text); }
+
+.btn-strava {
+  background: var(--strava-faint);
+  color: var(--strava);
+  border: 1px solid color-mix(in srgb, var(--strava) 25%, transparent);
+}
+.btn-strava:hover:not(:disabled) { opacity: .85; }
+
+.btn-danger {
+  background: var(--danger-faint);
+  color: var(--danger);
+  border: 1px solid color-mix(in srgb, var(--danger) 20%, transparent);
+}
+.btn-danger:hover:not(:disabled) { opacity: .85; }
+
+.btn-sm {
+  font-size: 12px;
+  padding: 5px 10px;
+}
+
+/* ── Modal / Overlay ── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s;
+}
+
+.overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.modal {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+  transform: translateY(8px);
+  transition: transform .2s;
+}
+
+.overlay.open .modal { transform: translateY(0); }
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 0;
+}
+
+.modal-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-3);
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: color .15s;
+}
+.modal-close:hover { color: var(--text); }
+
+.modal-body {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modal-foot {
+  padding: 0 24px 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* ── Form fields ── */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.field label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-2);
+}
+
+.field input,
+.field select {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color .15s;
+  width: 100%;
+}
+
+.field input:focus,
+.field select:focus {
+  border-color: var(--accent);
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* ── Year filter ── */
+.year-filter {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.year-pill {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 4px 14px;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all .15s;
+}
+.year-pill:hover { border-color: var(--accent); color: var(--accent); }
+.year-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* ── Empty state ── */
+.empty-state {
+  text-align: center;
+  padding: 60px 24px;
+  color: var(--text-3);
+}
+
+.empty-state p {
+  font-size: 15px;
+  margin-bottom: 20px;
+}
+
+/* ── Badges ── */
+.badge-pb {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--accent);
+  border-radius: 4px;
+  padding: 2px 6px;
+  flex-shrink: 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .nav { padding: 0 14px; }
+  main { padding: 20px 12px; }
+  .section-header { flex-wrap: wrap; gap: 10px; }
+  .field-row { grid-template-columns: 1fr; }
+  .pb-grid { grid-template-columns: 1fr; }
+  .list-item { flex-wrap: wrap; }
+}
+
+/* ── Utilities ── */
+.mt-2 { margin-top: 8px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-brand">PB<span class="dot">·</span>TRACKER</div>
+  <div style="display:flex;align-items:center">
+    <div class="nav-links">
+      <button class="nav-link active" id="nav-dashboard" onclick="navigate('dashboard')">Dashboard</button>
+      <button class="nav-link" id="nav-times" onclick="navigate('times')">Times</button>
+      <button class="nav-link" id="nav-distances" onclick="navigate('distances')">Distances</button>
+    </div>
+    <!-- Strava connect button -->
+    <button class="nav-icon-btn strava-nav-btn" id="strava-nav-btn" onclick="openStravaSetup()" title="Connect Strava">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0 4 13.828h4.172"/></svg>
+    </button>
+    <!-- Theme toggle -->
+    <button class="nav-icon-btn" id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark mode">
+      <svg id="theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <svg id="theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<main>
+  <!-- Dashboard -->
+  <div class="view active" id="view-dashboard">
+    <div class="section-header">
+      <h1 class="section-title">Dashboard</h1>
+      <button class="btn btn-primary" onclick="openLogRun()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Log Run
+      </button>
+    </div>
+    <div class="year-filter" id="year-filter"></div>
+    <div class="pb-grid" id="pb-grid"></div>
+  </div>
+
+  <!-- Times -->
+  <div class="view" id="view-times">
+    <div class="section-header">
+      <h1 class="section-title">Times</h1>
+      <button class="btn btn-primary" onclick="openLogRun()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Log Run
+      </button>
+    </div>
+    <div class="year-filter" id="year-filter-times"></div>
+    <div class="year-filter" id="dist-filter-times"></div>
+    <div id="times-list"></div>
+  </div>
+
+  <!-- Distances -->
+  <div class="view" id="view-distances">
+    <div class="section-header">
+      <h1 class="section-title">Distances</h1>
+      <button class="btn btn-primary" onclick="openAddDistance()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Add Distance
+      </button>
+    </div>
+    <div class="list-items" id="dist-list"></div>
+  </div>
+</main>
+
+<!-- Log Run Modal -->
+<div class="overlay" id="overlay-run" onclick="handleOverlayClick(event,'overlay-run')">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title" id="run-modal-title">Log Run</span>
+      <button class="modal-close" onclick="closeModal('overlay-run')" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="run-edit-id">
+
+      <!-- Strava import (shown only when connected) -->
+      <div id="strava-import-section" style="display:none">
+        <button type="button" class="btn btn-strava" style="width:100%;justify-content:center" onclick="toggleStravaImport()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0 4 13.828h4.172"/></svg>
+          Pick from Strava
+        </button>
+        <div id="strava-activities-list" style="display:none;border:1px solid var(--border);border-radius:var(--radius-sm);overflow-y:auto;max-height:210px;margin-top:8px"></div>
+      </div>
+
+      <div class="field">
+        <label for="run-dist">Distance</label>
+        <select id="run-dist"></select>
+      </div>
+      <div class="field">
+        <label for="run-time">Time</label>
+        <input type="text" id="run-time" placeholder="MM:SS or H:MM:SS" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="run-date">Date</label>
+        <input type="date" id="run-date">
+      </div>
+      <div class="field">
+        <label for="run-strava">Strava Activity URL <span style="font-weight:400;color:var(--text-3)">(optional)</span></label>
+        <input type="url" id="run-strava" placeholder="https://www.strava.com/activities/...">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('overlay-run')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveRun()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Distance Modal -->
+<div class="overlay" id="overlay-dist" onclick="handleOverlayClick(event,'overlay-dist')">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title" id="dist-modal-title">Add Distance</span>
+      <button class="modal-close" onclick="closeModal('overlay-dist')" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="dist-edit-id">
+      <div class="field">
+        <label for="dist-name">Name</label>
+        <input type="text" id="dist-name" placeholder="e.g. 5K, Half Marathon">
+      </div>
+      <div class="field">
+        <label for="dist-value">Distance <span style="font-weight:400;color:var(--text-3)">(optional)</span></label>
+        <div style="display:flex;gap:8px">
+          <input type="number" id="dist-value" placeholder="e.g. 5.0" step="0.01" min="0" style="flex:1">
+          <select id="dist-unit" style="width:80px;padding:0 8px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-size:14px;font-family:var(--font-body)">
+            <option value="km">km</option>
+            <option value="mi">mi</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('overlay-dist')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveDistance()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="overlay" id="overlay-confirm" onclick="handleOverlayClick(event,'overlay-confirm')">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-head">
+      <span class="modal-title" id="confirm-title">Confirm</span>
+    </div>
+    <div class="modal-body">
+      <p id="confirm-msg" style="color:var(--text-2);font-size:15px;line-height:1.5"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('overlay-confirm')">Cancel</button>
+      <button class="btn btn-danger" id="confirm-ok">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Strava Setup Modal -->
+<div class="overlay" id="overlay-strava" onclick="handleOverlayClick(event,'overlay-strava')">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title" id="strava-modal-title">Connect Strava</span>
+      <button class="modal-close" onclick="closeModal('overlay-strava')" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 4l10 10M14 4L4 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="strava-modal-body"></div>
+    <div class="modal-foot" id="strava-modal-foot"></div>
+  </div>
+</div>
+
+<script>
+// ── Theme ────────────────────────────────────────────────────────────────────
+
+var THEME_KEY = 'pbt_theme';
+
+function applyTheme(theme) {
+  var root = document.documentElement;
+  if (theme === 'dark') root.setAttribute('data-theme', 'dark');
+  else if (theme === 'light') root.setAttribute('data-theme', 'light');
+  else root.removeAttribute('data-theme');
+  var isDark = theme === 'dark' || (theme !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.getElementById('theme-icon-sun').style.display = isDark ? '' : 'none';
+  document.getElementById('theme-icon-moon').style.display = isDark ? 'none' : '';
+}
+
+function toggleTheme() {
+  var isDark = document.documentElement.getAttribute('data-theme') === 'dark' ||
+    (!document.documentElement.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  var next = isDark ? 'light' : 'dark';
+  localStorage.setItem(THEME_KEY, next);
+  applyTheme(next);
+}
+
+(function() {
+  var saved = localStorage.getItem(THEME_KEY);
+  applyTheme(saved || 'system');
+})();
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+function distToKm(d) {
+  if (d.km != null) return d.km;
+  return d.unit === 'mi' ? d.value * 1.60934 : d.value;
+}
+
+function sortedDistances() {
+  return state.distances.slice().sort(function(a, b) {
+    return distToKm(a) - distToKm(b);
+  });
+}
+
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function parseSecs(str) {
+  str = str.trim();
+  var parts = str.split(':').map(Number);
+  if (parts.some(isNaN)) return null;
+  if (parts.length === 2) {
+    var m = parts[0], s = parts[1];
+    if (s >= 60) return null;
+    return m * 60 + s;
+  }
+  if (parts.length === 3) {
+    var h = parts[0], m2 = parts[1], s2 = parts[2];
+    if (m2 >= 60 || s2 >= 60) return null;
+    return h * 3600 + m2 * 60 + s2;
+  }
+  return null;
+}
+
+function fmtSecs(secs) {
+  if (secs == null) return '—';
+  var h = Math.floor(secs / 3600);
+  var m = Math.floor((secs % 3600) / 60);
+  var s = secs % 60;
+  var mm = String(m).padStart(2, '0');
+  var ss = String(s).padStart(2, '0');
+  if (h > 0) return h + ':' + mm + ':' + ss;
+  return m + ':' + ss;
+}
+
+function fmtDate(dateStr) {
+  if (!dateStr) return '';
+  var parts = dateStr.split('-').map(Number);
+  var dt = new Date(parts[0], parts[1] - 1, parts[2]);
+  return dt.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function fmtDist(d) {
+  var km = distToKm(d);
+  if (km == null) return null;
+  var rounded = Math.round(km * 10) / 10;
+  return (rounded % 1 === 0 ? rounded : rounded.toFixed(1)) + ' km';
+}
+
+function stravaIcon() {
+  return '<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0 4 13.828h4.172"/></svg>';
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ── State ────────────────────────────────────────────────────────────────────
+
+var STORAGE_KEY = 'pbt_v2';
+
+var DEFAULT_DISTANCES = [
+  { id: 'std_1mi',  name: '1 Mile',        value: 1,       unit: 'mi' },
+  { id: 'std_5k',   name: '5K',            value: 5,       unit: 'km' },
+  { id: 'std_10k',  name: '10K',           value: 10,      unit: 'km' },
+  { id: 'std_10mi', name: '10 Mile',       value: 10,      unit: 'mi' },
+  { id: 'std_hm',   name: 'Half Marathon', value: 21.0975, unit: 'km' },
+  { id: 'std_m',    name: 'Marathon',      value: 42.195,  unit: 'km' },
+];
+
+var state = {
+  distances: DEFAULT_DISTANCES.map(function(d) { return Object.assign({}, d); }),
+  runs: [],
+  view: 'dashboard',
+  yearFilter: 'all',
+  distFilter: 'all'
+};
+
+function loadState() {
+  try {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      var parsed = JSON.parse(raw);
+      state = Object.assign({
+        distances: DEFAULT_DISTANCES.map(function(d) { return Object.assign({}, d); }),
+        runs: [],
+        view: 'dashboard',
+        yearFilter: 'all',
+        distFilter: 'all'
+      }, parsed);
+      if (!state.distances || state.distances.length === 0) {
+        state.distances = DEFAULT_DISTANCES.map(function(d) { return Object.assign({}, d); });
+      }
+    }
+  } catch (e) {}
+}
+
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+// ── Strava ───────────────────────────────────────────────────────────────────
+
+var STRAVA_KEY = 'pbt_strava';
+var STRAVA_WORKER = 'https://pb-tracker-strava.njdeere.workers.dev';
+var STRAVA_CLIENT_ID = '252521';
+var stravaAuth = null;
+var stravaActivitiesCache = [];
+var stravaImportOpen = false;
+
+function loadStravaAuth() {
+  try {
+    var raw = localStorage.getItem(STRAVA_KEY);
+    stravaAuth = raw ? JSON.parse(raw) : null;
+  } catch (e) { stravaAuth = null; }
+}
+
+function saveStravaAuth() {
+  try {
+    if (stravaAuth) localStorage.setItem(STRAVA_KEY, JSON.stringify(stravaAuth));
+    else localStorage.removeItem(STRAVA_KEY);
+  } catch (e) {}
+}
+
+function stravaIsConnected() {
+  return !!(stravaAuth && stravaAuth.accessToken);
+}
+
+function updateStravaNavBtn() {
+  var btn = document.getElementById('strava-nav-btn');
+  if (!btn) return;
+  if (stravaIsConnected()) {
+    btn.classList.add('connected');
+    var name = stravaAuth.athlete ? stravaAuth.athlete.firstname + ' ' + stravaAuth.athlete.lastname : 'Connected';
+    btn.title = 'Strava · ' + name;
+  } else {
+    btn.classList.remove('connected');
+    btn.title = 'Connect Strava';
+  }
+}
+
+function updateLogRunStravaSection() {
+  var section = document.getElementById('strava-import-section');
+  if (!section) return;
+  section.style.display = stravaIsConnected() ? '' : 'none';
+}
+
+function openStravaSetup() {
+  renderStravaSetupModal();
+  openModal('overlay-strava');
+}
+
+function renderStravaSetupModal() {
+  var body = document.getElementById('strava-modal-body');
+  var foot = document.getElementById('strava-modal-foot');
+  var title = document.getElementById('strava-modal-title');
+
+  if (stravaIsConnected()) {
+    title.textContent = 'Strava Connected';
+    var name = stravaAuth.athlete ? stravaAuth.athlete.firstname + ' ' + stravaAuth.athlete.lastname : 'Athlete';
+    body.innerHTML =
+      '<div style="display:flex;align-items:center;gap:14px;padding:4px 0 8px">' +
+        '<svg width="36" height="36" viewBox="0 0 24 24" fill="var(--strava)"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0 4 13.828h4.172"/></svg>' +
+        '<div>' +
+          '<div style="font-weight:600;font-size:15px">' + escHtml(name) + '</div>' +
+          '<div style="font-size:13px;color:var(--text-3)">Connected to Strava</div>' +
+        '</div>' +
+      '</div>' +
+      '<p style="font-size:13px;color:var(--text-2);line-height:1.6">When logging a run, tap <strong>Pick from Strava</strong> to import a recent activity directly into the form.</p>';
+    foot.innerHTML =
+      '<button class="btn btn-ghost" onclick="closeModal(\'overlay-strava\')">Close</button>' +
+      '<button class="btn btn-danger" onclick="disconnectStrava()">Disconnect</button>';
+
+  } else if (stravaAuth && stravaAuth.step === 'manual') {
+    title.textContent = 'Paste Tokens Manually';
+    var curlCmd = 'curl -X POST https://www.strava.com/oauth/token' +
+      ' -F client_id=' + escHtml(stravaAuth.clientId || '') +
+      ' -F client_secret=' + escHtml(stravaAuth.clientSecret || '') +
+      ' -F code=' + escHtml(stravaAuth.pendingCode || 'YOUR_CODE') +
+      ' -F grant_type=authorization_code';
+    body.innerHTML =
+      '<p style="font-size:13px;color:var(--text-2);line-height:1.6">The browser can\'t exchange the code directly. Run this command in a terminal, then paste the tokens from the response:</p>' +
+      '<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-family:var(--font-mono);font-size:11px;color:var(--text-2);word-break:break-all;line-height:1.6;user-select:all">' + curlCmd + '</div>' +
+      '<p style="font-size:12px;color:var(--text-3)">The response is JSON. Copy the <code style="background:var(--surface-2);padding:1px 4px;border-radius:3px">access_token</code> and <code style="background:var(--surface-2);padding:1px 4px;border-radius:3px">refresh_token</code> values below.</p>' +
+      '<div class="field"><label for="strava-manual-at">access_token</label><input type="text" id="strava-manual-at" placeholder="abc123..." autocomplete="off" spellcheck="false"></div>' +
+      '<div class="field"><label for="strava-manual-rt">refresh_token</label><input type="text" id="strava-manual-rt" placeholder="def456..." autocomplete="off" spellcheck="false"></div>' +
+      '<div id="strava-manual-error" style="font-size:12px;color:var(--danger);display:none;margin-top:-6px"></div>';
+    foot.innerHTML =
+      '<button class="btn btn-ghost" onclick="stravaGoBack()">Back</button>' +
+      '<button class="btn btn-strava" onclick="completeManualTokenEntry()">Save Tokens</button>';
+
+  } else if (stravaAuth && stravaAuth.step === 'code') {
+    title.textContent = 'Paste Auth Code';
+    body.innerHTML =
+      '<p style="font-size:13px;color:var(--text-2);line-height:1.6">After authorising, Strava redirects to a page that won\'t load — that\'s expected. <strong>Copy the full URL</strong> from your browser\'s address bar and paste it below.</p>' +
+      '<div class="field">' +
+        '<label for="strava-code-input">Redirect URL or auth code</label>' +
+        '<input type="text" id="strava-code-input" placeholder="http://localhost/?code=..." autocomplete="off" spellcheck="false">' +
+      '</div>' +
+      '<div id="strava-code-error" style="font-size:12px;color:var(--danger);display:none;margin-top:-6px"></div>';
+    foot.innerHTML =
+      '<button class="btn btn-ghost" onclick="stravaGoBack()">Back</button>' +
+      '<button class="btn btn-strava" onclick="completeStravaAuth()">Connect</button>';
+
+  } else {
+    title.textContent = 'Connect Strava';
+    body.innerHTML =
+      '<p style="font-size:13px;color:var(--text-2);line-height:1.6">' +
+        'Link your Strava account to import runs automatically. You\'ll be taken to Strava to authorise, then returned here.' +
+      '</p>' +
+      '<div id="strava-setup-error" style="font-size:12px;color:var(--danger);display:none;margin-top:4px"></div>';
+    foot.innerHTML =
+      '<button class="btn btn-ghost" onclick="closeModal(\'overlay-strava\')">Cancel</button>' +
+      '<button class="btn btn-strava" onclick="startStravaAuth()">' +
+        '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0 4 13.828h4.172"/></svg>' +
+        'Connect with Strava' +
+      '</button>';
+  }
+}
+
+function stravaGoBack() {
+  if (stravaAuth) { stravaAuth.step = 'setup'; saveStravaAuth(); }
+  renderStravaSetupModal();
+}
+
+function startStravaAuth() {
+  stravaAuth = { step: 'code' };
+  saveStravaAuth();
+  var redirectUri = window.location.origin + window.location.pathname;
+  var authUrl =
+    'https://www.strava.com/oauth/authorize' +
+    '?client_id=' + STRAVA_CLIENT_ID +
+    '&redirect_uri=' + encodeURIComponent(redirectUri) +
+    '&response_type=code' +
+    '&approval_prompt=force' +
+    '&scope=activity%3Aread_all';
+  window.location.href = authUrl;
+}
+
+async function completeStravaAuth() {
+  var input = document.getElementById('strava-code-input').value.trim();
+  var errEl = document.getElementById('strava-code-error');
+  errEl.style.display = 'none';
+
+  var code = input;
+  try {
+    var url = new URL(input);
+    var extracted = url.searchParams.get('code');
+    if (extracted) code = extracted;
+  } catch (e) { /* treat as raw code */ }
+
+  if (!code) {
+    errEl.textContent = 'Please paste the redirect URL or auth code.';
+    errEl.style.display = '';
+    return;
+  }
+
+  var connectBtn = document.querySelector('#strava-modal-foot .btn-strava');
+  if (connectBtn) { connectBtn.disabled = true; connectBtn.textContent = 'Connecting…'; }
+
+  try {
+    var resp = await fetch(STRAVA_WORKER + '/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: code })
+    });
+    var data = await resp.json();
+    if (!resp.ok || !data.access_token) throw new Error(data.error || 'Token exchange failed');
+    stravaAuth = {
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+      expiresAt: data.expires_at,
+      athlete: data.athlete,
+      step: 'connected'
+    };
+    saveStravaAuth();
+    updateStravaNavBtn();
+    renderStravaSetupModal();
+  } catch (e) {
+    if (connectBtn) { connectBtn.disabled = false; connectBtn.textContent = 'Connect'; }
+    errEl.textContent = 'Connection failed: ' + e.message;
+    errEl.style.display = '';
+  }
+}
+
+function completeManualTokenEntry() {
+  var at = document.getElementById('strava-manual-at').value.trim();
+  var rt = document.getElementById('strava-manual-rt').value.trim();
+  var errEl = document.getElementById('strava-manual-error');
+  if (!at || !rt) { errEl.textContent = 'Paste both tokens.'; errEl.style.display = ''; return; }
+  stravaAuth = {
+    clientId: stravaAuth.clientId,
+    clientSecret: stravaAuth.clientSecret,
+    accessToken: at,
+    refreshToken: rt,
+    expiresAt: Math.floor(Date.now() / 1000) + 3600,
+    step: 'connected'
+  };
+  saveStravaAuth();
+  updateStravaNavBtn();
+  renderStravaSetupModal();
+}
+
+async function getValidStravaToken() {
+  if (!stravaAuth || !stravaAuth.accessToken) return null;
+  var now = Math.floor(Date.now() / 1000);
+  if (stravaAuth.expiresAt && stravaAuth.expiresAt > now + 60) return stravaAuth.accessToken;
+  try {
+    var resp = await fetch(STRAVA_WORKER + '/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: stravaAuth.refreshToken })
+    });
+    var data = await resp.json();
+    if (!resp.ok || !data.access_token) throw new Error('Refresh failed');
+    stravaAuth.accessToken = data.access_token;
+    stravaAuth.refreshToken = data.refresh_token;
+    stravaAuth.expiresAt = data.expires_at;
+    saveStravaAuth();
+    return stravaAuth.accessToken;
+  } catch (e) {
+    return stravaAuth.accessToken; // best-effort with expired token
+  }
+}
+
+function disconnectStrava() {
+  stravaAuth = null;
+  stravaActivitiesCache = [];
+  saveStravaAuth();
+  updateStravaNavBtn();
+  closeModal('overlay-strava');
+  updateLogRunStravaSection();
+}
+
+async function toggleStravaImport() {
+  var list = document.getElementById('strava-activities-list');
+  if (stravaImportOpen) {
+    stravaImportOpen = false;
+    list.style.display = 'none';
+    return;
+  }
+  stravaImportOpen = true;
+  list.style.display = '';
+  list.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-3);font-size:13px">Loading activities…</div>';
+
+  try {
+    var token = await getValidStravaToken();
+    if (!token) throw new Error('Not connected to Strava');
+    var resp = await fetch('https://www.strava.com/api/v3/athlete/activities?per_page=30', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!resp.ok) throw new Error('API error ' + resp.status);
+    var acts = await resp.json();
+    stravaActivitiesCache = acts.filter(function(a) {
+      return a.type === 'Run' || a.sport_type === 'Run';
+    });
+    renderStravaActivityList(list);
+  } catch (e) {
+    var isCorsBlock = e.message === 'Failed to fetch' || e.message.indexOf('NetworkError') !== -1;
+    if (isCorsBlock) {
+      list.innerHTML = '<div style="padding:12px 16px;font-size:13px;line-height:1.6">' +
+        '<strong style="color:var(--danger)">Sandbox blocks Strava API calls</strong><br>' +
+        '<span style="color:var(--text-2)">The <code style="font-size:11px;background:var(--surface-2);padding:1px 4px;border-radius:3px">Authorization</code> header triggers a CORS preflight the artifact sandbox can\'t send.<br><br>' +
+        'Enter your run details manually below — distance, time and date.</span>' +
+        '</div>';
+    } else {
+      list.innerHTML = '<div style="padding:12px 16px;color:var(--danger);font-size:13px">Failed: ' + escHtml(e.message) + '</div>';
+    }
+  }
+}
+
+function renderStravaActivityList(list) {
+  if (stravaActivitiesCache.length === 0) {
+    list.innerHTML = '<div style="padding:12px 16px;color:var(--text-3);font-size:13px">No recent runs found.</div>';
+    return;
+  }
+  list.innerHTML = '';
+  stravaActivitiesCache.forEach(function(act, idx) {
+    var distKm = act.distance / 1000;
+    var distStr = (Math.round(distKm * 10) / 10).toFixed(1) + ' km';
+    var timeStr = fmtSecs(act.elapsed_time);
+    var rawDate = act.start_date_local ? act.start_date_local.slice(0, 10) : '';
+    var dateStr = rawDate ? fmtDate(rawDate) : '';
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'strava-act-row';
+    btn.innerHTML =
+      '<div class="strava-act-name">' + escHtml(act.name) + '</div>' +
+      '<div class="strava-act-meta">' + distStr + ' · ' + timeStr + (dateStr ? ' · ' + dateStr : '') + '</div>';
+    btn.onclick = function() { importStravaActivity(idx); };
+    list.appendChild(btn);
+  });
+}
+
+function importStravaActivity(idx) {
+  var act = stravaActivitiesCache[idx];
+  if (!act) return;
+
+  var distKm = act.distance / 1000;
+  var rawDate = act.start_date_local ? act.start_date_local.slice(0, 10) : today();
+  var stravaUrl = 'https://www.strava.com/activities/' + act.id;
+
+  // Find nearest distance — only match if within 10% of the target (min 1 km tolerance)
+  var matchedDistId = null;
+  var bestDiff = Infinity;
+  state.distances.forEach(function(d) {
+    var km = distToKm(d);
+    if (km == null || isNaN(km)) return;
+    var diff = Math.abs(km - distKm);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      matchedDistId = d.id;
+    }
+  });
+  // Reject the match if it's too far away
+  if (matchedDistId) {
+    var matchedDist = state.distances.find(function(d) { return d.id === matchedDistId; });
+    var matchedKm = matchedDist ? distToKm(matchedDist) : 0;
+    var tolerance = Math.max(1.0, matchedKm * 0.10);
+    if (bestDiff > tolerance) matchedDistId = null;
+  }
+
+  if (matchedDistId) {
+    var sel = document.getElementById('run-dist');
+    sel.value = matchedDistId;
+  }
+  document.getElementById('run-time').value = fmtSecs(act.elapsed_time);
+  document.getElementById('run-date').value = rawDate;
+  document.getElementById('run-strava').value = stravaUrl;
+
+  // Collapse list
+  stravaImportOpen = false;
+  document.getElementById('strava-activities-list').style.display = 'none';
+}
+
+// ── Navigation ───────────────────────────────────────────────────────────────
+
+function navigate(view) {
+  state.view = view;
+  saveState();
+  document.querySelectorAll('.view').forEach(function(el) { el.classList.remove('active'); });
+  document.querySelectorAll('.nav-link').forEach(function(el) { el.classList.remove('active'); });
+  var viewEl = document.getElementById('view-' + view);
+  if (viewEl) viewEl.classList.add('active');
+  var navEl = document.getElementById('nav-' + view);
+  if (navEl) navEl.classList.add('active');
+  renderAll();
+}
+
+// ── Modal helpers ────────────────────────────────────────────────────────────
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function handleOverlayClick(e, id) { if (e.target.id === id) closeModal(id); }
+
+// ── Run Modal ────────────────────────────────────────────────────────────────
+
+function openLogRun(runId, preDistId) {
+  var isEdit = !!runId;
+  document.getElementById('run-modal-title').textContent = isEdit ? 'Edit Run' : 'Log Run';
+  document.getElementById('run-edit-id').value = runId || '';
+
+  // Reset Strava import state
+  stravaImportOpen = false;
+  var actList = document.getElementById('strava-activities-list');
+  if (actList) actList.style.display = 'none';
+
+  var sel = document.getElementById('run-dist');
+  sel.innerHTML = '';
+  if (state.distances.length === 0) {
+    var emptyOpt = document.createElement('option');
+    emptyOpt.value = '';
+    emptyOpt.textContent = '— No distances yet —';
+    sel.appendChild(emptyOpt);
+  } else {
+    sortedDistances().forEach(function(d) {
+      var opt = document.createElement('option');
+      opt.value = d.id;
+      opt.textContent = d.name;
+      sel.appendChild(opt);
+    });
+  }
+
+  if (isEdit) {
+    var run = state.runs.find(function(r) { return r.id === runId; });
+    if (run) {
+      sel.value = run.distId;
+      document.getElementById('run-time').value = fmtSecs(run.secs);
+      document.getElementById('run-date').value = run.date;
+      document.getElementById('run-strava').value = run.stravaUrl || '';
+    }
+  } else {
+    if (preDistId) sel.value = preDistId;
+    document.getElementById('run-time').value = '';
+    document.getElementById('run-date').value = today();
+    document.getElementById('run-strava').value = '';
+  }
+
+  updateLogRunStravaSection();
+  openModal('overlay-run');
+}
+
+function openLogRunForDist(distId) {
+  var best = getBestRun(distId);
+  if (best) openLogRun(best.id);
+  else openLogRun(null, distId);
+}
+
+function saveRun() {
+  var distId = document.getElementById('run-dist').value;
+  var timeStr = document.getElementById('run-time').value;
+  var dateVal = document.getElementById('run-date').value;
+  var stravaUrl = document.getElementById('run-strava').value.trim();
+  var editId = document.getElementById('run-edit-id').value;
+
+  if (!distId) { alert('Please select a distance.'); return; }
+  var secs = parseSecs(timeStr);
+  if (secs === null) { alert('Please enter a valid time (MM:SS or H:MM:SS).'); return; }
+  if (!dateVal) { alert('Please select a date.'); return; }
+  if (stravaUrl && !stravaUrl.startsWith('http')) { alert('Please enter a valid Strava URL.'); return; }
+
+  if (editId) {
+    var idx = state.runs.findIndex(function(r) { return r.id === editId; });
+    if (idx !== -1) state.runs[idx] = { id: editId, distId: distId, secs: secs, date: dateVal, stravaUrl: stravaUrl };
+  } else {
+    state.runs.push({ id: uid(), distId: distId, secs: secs, date: dateVal, stravaUrl: stravaUrl });
+  }
+
+  saveState();
+  closeModal('overlay-run');
+  renderAll();
+}
+
+// ── Distance Modal ───────────────────────────────────────────────────────────
+
+function openAddDistance(distId) {
+  var isEdit = !!distId;
+  document.getElementById('dist-modal-title').textContent = isEdit ? 'Edit Distance' : 'Add Distance';
+  document.getElementById('dist-edit-id').value = distId || '';
+
+  if (isEdit) {
+    var dist = state.distances.find(function(d) { return d.id === distId; });
+    if (dist) {
+      document.getElementById('dist-name').value = dist.name;
+      if (dist.unit) {
+        document.getElementById('dist-value').value = dist.value != null ? dist.value : '';
+        document.getElementById('dist-unit').value = dist.unit;
+      } else {
+        document.getElementById('dist-value').value = dist.km != null ? dist.km : '';
+        document.getElementById('dist-unit').value = 'km';
+      }
+    }
+  } else {
+    document.getElementById('dist-name').value = '';
+    document.getElementById('dist-value').value = '';
+    document.getElementById('dist-unit').value = 'km';
+  }
+
+  openModal('overlay-dist');
+}
+
+function saveDistance() {
+  var name = document.getElementById('dist-name').value.trim();
+  var valRaw = document.getElementById('dist-value').value.trim();
+  var unit = document.getElementById('dist-unit').value;
+  var editId = document.getElementById('dist-edit-id').value;
+
+  if (!name) { alert('Please enter a distance name.'); return; }
+  var km = null;
+  if (valRaw !== '') {
+    var val = parseFloat(valRaw);
+    if (isNaN(val) || val < 0) { alert('Please enter a valid distance.'); return; }
+    km = unit === 'mi' ? val * 1.60934 : val;
+  }
+
+  if (editId) {
+    var idx = state.distances.findIndex(function(d) { return d.id === editId; });
+    if (idx !== -1) state.distances[idx] = { id: editId, name: name, km: km };
+  } else {
+    state.distances.push({ id: uid(), name: name, km: km });
+  }
+
+  saveState();
+  closeModal('overlay-dist');
+  renderAll();
+}
+
+function showConfirm(title, msg, onOk) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-msg').textContent = msg;
+  var btn = document.getElementById('confirm-ok');
+  btn.onclick = function() { closeModal('overlay-confirm'); onOk(); };
+  openModal('overlay-confirm');
+}
+
+function deleteDistance(distId) {
+  var dist = state.distances.find(function(d) { return d.id === distId; });
+  if (!dist) return;
+  var hasRuns = state.runs.some(function(r) { return r.distId === distId; });
+  var msg = hasRuns
+    ? 'Delete "' + dist.name + '"? This will also remove all runs logged for this distance.'
+    : 'Delete "' + dist.name + '"?';
+  showConfirm('Delete Distance', msg, function() {
+    state.distances = state.distances.filter(function(d) { return d.id !== distId; });
+    state.runs = state.runs.filter(function(r) { return r.distId !== distId; });
+    saveState();
+    renderAll();
+  });
+}
+
+function deleteRun(runId) {
+  showConfirm('Delete Run', 'Delete this run entry?', function() {
+    state.runs = state.runs.filter(function(r) { return r.id !== runId; });
+    saveState();
+    renderAll();
+  });
+}
+
+// ── Render: Dashboard ────────────────────────────────────────────────────────
+
+function getRunYears() {
+  var years = {};
+  state.runs.forEach(function(r) { if (r.date) years[r.date.slice(0, 4)] = true; });
+  return Object.keys(years).sort().reverse();
+}
+
+function setYearFilter(year) {
+  state.yearFilter = year;
+  if (state.view === 'times') renderTimes();
+  else renderDashboard();
+}
+
+function setDistFilter(distId) {
+  state.distFilter = distId;
+  renderTimes();
+}
+
+function getBestRun(distId) {
+  var year = state.yearFilter;
+  var runs = state.runs.filter(function(r) {
+    if (r.distId !== distId) return false;
+    if (year !== 'all' && (!r.date || r.date.slice(0, 4) !== year)) return false;
+    return true;
+  });
+  if (!runs.length) return null;
+  return runs.reduce(function(best, r) { return r.secs < best.secs ? r : best; });
+}
+
+function renderDashboard() {
+  var grid = document.getElementById('pb-grid');
+  var filterEl = document.getElementById('year-filter');
+
+  var years = getRunYears();
+  if (years.length > 0) {
+    var pillsHtml = '<button class="year-pill ' + (state.yearFilter === 'all' ? 'active' : '') + '" onclick="setYearFilter(\'all\')">All time</button>';
+    years.forEach(function(y) {
+      pillsHtml += '<button class="year-pill ' + (state.yearFilter === y ? 'active' : '') + '" onclick="setYearFilter(\'' + y + '\')">' + y + '</button>';
+    });
+    filterEl.innerHTML = pillsHtml;
+    filterEl.style.display = '';
+  } else {
+    filterEl.innerHTML = '';
+    filterEl.style.display = 'none';
+  }
+
+  grid.innerHTML = '';
+
+  var distsWithRuns = sortedDistances().filter(function(dist) {
+    return getBestRun(dist.id) !== null;
+  });
+
+  if (distsWithRuns.length === 0) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><p>No runs logged yet. Log a run to see your PBs here.</p><button class="btn btn-primary" onclick="openLogRun()">Log Run</button></div>';
+    return;
+  }
+
+  distsWithRuns.forEach(function(dist) {
+    var best = getBestRun(dist.id);
+    var card = document.createElement('div');
+    card.className = 'pb-card';
+
+    var runCount = state.runs.filter(function(r) {
+      if (r.distId !== dist.id) return false;
+      if (state.yearFilter !== 'all' && (!r.date || r.date.slice(0,4) !== state.yearFilter)) return false;
+      return true;
+    }).length;
+
+    var distLabel = fmtDist(dist);
+    var distMeta = distLabel ? '<div class="pb-dist-meta">' + distLabel + '</div>' : '';
+    var stravaBtn = best.stravaUrl
+      ? '<a href="' + escHtml(best.stravaUrl) + '" target="_blank" rel="noopener" class="btn btn-strava btn-sm">' + stravaIcon() + ' Strava</a>'
+      : '';
+    var logBtn = '<button class="btn btn-ghost btn-sm" onclick="openLogRunForDist(\'' + dist.id + '\')">Update</button>';
+    var runCountHtml = '<span class="pb-run-count">' + runCount + ' run' + (runCount !== 1 ? 's' : '') + '</span>';
+
+    card.innerHTML =
+      '<div class="pb-card-body">' +
+        '<div class="pb-dist-name">' + escHtml(dist.name) + '</div>' +
+        distMeta +
+        '<div class="pb-time">' + fmtSecs(best.secs) + '</div>' +
+        '<div class="pb-date-set">Set ' + fmtDate(best.date) + '</div>' +
+      '</div>' +
+      '<div class="pb-card-footer">' +
+        stravaBtn +
+        runCountHtml +
+        logBtn +
+      '</div>';
+
+    grid.appendChild(card);
+  });
+}
+
+// ── Render: Times ────────────────────────────────────────────────────────────
+
+function renderTimes() {
+  var container = document.getElementById('times-list');
+  var filterEl = document.getElementById('year-filter-times');
+
+  var years = getRunYears();
+  if (years.length > 0) {
+    var pillsHtml = '<button class="year-pill ' + (state.yearFilter === 'all' ? 'active' : '') + '" onclick="setYearFilter(\'all\')">All time</button>';
+    years.forEach(function(y) {
+      pillsHtml += '<button class="year-pill ' + (state.yearFilter === y ? 'active' : '') + '" onclick="setYearFilter(\'' + y + '\')">' + y + '</button>';
+    });
+    filterEl.innerHTML = pillsHtml;
+    filterEl.style.display = '';
+  } else {
+    filterEl.innerHTML = '';
+    filterEl.style.display = 'none';
+  }
+
+  var distFilterEl = document.getElementById('dist-filter-times');
+  var distMap = {};
+  state.distances.forEach(function(d) { distMap[d.id] = d; });
+  var usedDistSet = {};
+  state.runs.forEach(function(r) { usedDistSet[r.distId] = true; });
+  var usedDistIds = sortedDistances().filter(function(d) { return usedDistSet[d.id]; }).map(function(d) { return d.id; });
+  if (usedDistIds.length > 1) {
+    var dpillsHtml = '<button class="year-pill ' + (state.distFilter === 'all' ? 'active' : '') + '" onclick="setDistFilter(\'all\')">All</button>';
+    usedDistIds.forEach(function(id) {
+      var d = distMap[id];
+      var label = d ? d.name : id;
+      dpillsHtml += '<button class="year-pill ' + (state.distFilter === id ? 'active' : '') + '" onclick="setDistFilter(\'' + id + '\')">' + escHtml(label) + '</button>';
+    });
+    distFilterEl.innerHTML = dpillsHtml;
+    distFilterEl.style.display = '';
+  } else {
+    distFilterEl.innerHTML = '';
+    distFilterEl.style.display = 'none';
+  }
+
+  if (state.runs.length === 0) {
+    container.innerHTML = '<div class="empty-state"><p>No runs logged yet.</p><button class="btn btn-primary" onclick="openLogRun()">Log Run</button></div>';
+    return;
+  }
+
+  var filtered = state.runs.filter(function(r) {
+    if (state.yearFilter !== 'all' && (!r.date || r.date.slice(0, 4) !== state.yearFilter)) return false;
+    if (state.distFilter !== 'all' && r.distId !== state.distFilter) return false;
+    return true;
+  });
+
+  var sorted = filtered.slice().sort(function(a, b) {
+    if (b.date !== a.date) return b.date.localeCompare(a.date);
+    return a.secs - b.secs;
+  });
+
+  if (sorted.length === 0) {
+    var noMsg = state.distFilter !== 'all'
+      ? 'No ' + (distMap[state.distFilter] ? distMap[state.distFilter].name : '') + ' runs' + (state.yearFilter !== 'all' ? ' in ' + state.yearFilter : '') + '.'
+      : 'No runs' + (state.yearFilter !== 'all' ? ' in ' + state.yearFilter : '') + '.';
+    container.innerHTML = '<div class="empty-state"><p>' + noMsg + '</p></div>';
+    return;
+  }
+
+  var bestByDist = {};
+  state.runs.forEach(function(r) {
+    if (!bestByDist[r.distId] || r.secs < bestByDist[r.distId].secs) bestByDist[r.distId] = r;
+  });
+
+  container.innerHTML = '';
+  var list = document.createElement('div');
+  list.className = 'list-items';
+
+  sorted.forEach(function(run) {
+    var dist = distMap[run.distId];
+    var distName = dist ? dist.name : '(Deleted distance)';
+    var isPB = bestByDist[run.distId] && bestByDist[run.distId].id === run.id;
+    var stravaHtml = run.stravaUrl
+      ? '<a href="' + escHtml(run.stravaUrl) + '" target="_blank" rel="noopener" class="strava-link">' + stravaIcon() + ' Strava</a>'
+      : '';
+    var pbBadge = isPB ? '<span class="badge-pb">PB</span>' : '';
+
+    var item = document.createElement('div');
+    item.className = 'list-item';
+    item.innerHTML =
+      '<div class="list-item-main">' +
+        '<div class="list-item-name">' + escHtml(distName) + '</div>' +
+        '<div class="list-item-sub"><span>' + fmtDate(run.date) + '</span>' + stravaHtml + '</div>' +
+      '</div>' +
+      pbBadge +
+      '<div class="list-item-time">' + fmtSecs(run.secs) + '</div>' +
+      '<div class="list-item-actions">' +
+        '<button class="btn btn-ghost btn-sm" onclick="openLogRun(\'' + run.id + '\')">Edit</button>' +
+        '<button class="btn btn-danger btn-sm" onclick="deleteRun(\'' + run.id + '\')">Delete</button>' +
+      '</div>';
+    list.appendChild(item);
+  });
+
+  container.appendChild(list);
+}
+
+// ── Render: Distances ────────────────────────────────────────────────────────
+
+function renderDistances() {
+  var list = document.getElementById('dist-list');
+
+  if (state.distances.length === 0) {
+    list.innerHTML = '<div class="empty-state"><p>No distances yet. Add one to start tracking.</p></div>';
+    return;
+  }
+
+  list.innerHTML = '';
+  sortedDistances().forEach(function(dist) {
+    var runCount = state.runs.filter(function(r) { return r.distId === dist.id; }).length;
+    var best = getBestRun(dist.id);
+    var meta = [];
+    var distLabel = fmtDist(dist);
+    if (distLabel) meta.push(distLabel);
+    meta.push(runCount + ' run' + (runCount !== 1 ? 's' : ''));
+    if (best) meta.push('PB: ' + fmtSecs(best.secs));
+
+    var item = document.createElement('div');
+    item.className = 'list-item';
+    item.innerHTML =
+      '<div class="list-item-main">' +
+        '<div class="list-item-name">' + escHtml(dist.name) + '</div>' +
+        '<div class="list-item-sub"><span>' + meta.join(' · ') + '</span></div>' +
+      '</div>' +
+      '<div class="list-item-actions">' +
+        '<button class="btn btn-ghost btn-sm" onclick="openAddDistance(\'' + dist.id + '\')">Edit</button>' +
+        '<button class="btn btn-danger btn-sm" onclick="deleteDistance(\'' + dist.id + '\')">Delete</button>' +
+      '</div>';
+    list.appendChild(item);
+  });
+}
+
+// ── Render All ───────────────────────────────────────────────────────────────
+
+function renderAll() {
+  renderDashboard();
+  renderTimes();
+  renderDistances();
+}
+
+// ── Service Worker ────────────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(function() {});
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+
+loadState();
+loadStravaAuth();
+navigate(state.view || 'dashboard');
+updateStravaNavBtn();
+
+// Handle Strava OAuth redirect — Strava sends ?code=xxx back to this page
+(async function handleStravaCallback() {
+  var params = new URLSearchParams(window.location.search);
+  var code = params.get('code');
+  var error = params.get('error');
+
+  // Check for a pending result stored before the redirect navigation
+  var pending = null;
+  try { pending = sessionStorage.getItem('pbt_oauth_pending'); } catch(e) {}
+  if (pending) {
+    try {
+      sessionStorage.removeItem('pbt_oauth_pending');
+      var saved = JSON.parse(pending);
+      if (saved && saved.accessToken) {
+        stravaAuth = saved;
+        saveStravaAuth();
+        updateStravaNavBtn();
+        updateLogRunStravaSection();
+        return;
+      }
+    } catch(e) {}
+  }
+
+  if (code || error) {
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+  if (error || !code) return;
+
+  try {
+    var resp = await fetch(STRAVA_WORKER + '/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: code })
+    });
+    var data = await resp.json();
+    if (!resp.ok || !data.access_token) throw new Error(data.error || 'Token exchange failed');
+    stravaAuth = {
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+      expiresAt: data.expires_at,
+      athlete: data.athlete,
+      step: 'connected'
+    };
+    try { sessionStorage.setItem('pbt_oauth_pending', JSON.stringify(stravaAuth)); } catch(e) {}
+    saveStravaAuth();
+    updateStravaNavBtn();
+    updateLogRunStravaSection();
+    try { sessionStorage.removeItem('pbt_oauth_pending'); } catch(e) {}
+  } catch (e) {
+    stravaAuth = { step: 'setup' };
+    saveStravaAuth();
+    openStravaSetup();
+    var errEl = document.getElementById('strava-setup-error');
+    if (errEl) { errEl.textContent = 'Could not connect: ' + e.message; errEl.style.display = ''; }
+  }
+})();
+</script>
+</body>
+</html>
